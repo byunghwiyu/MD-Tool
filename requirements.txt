@@ -1,0 +1,14 @@
+# core
+fastapi
+uvicorn[standard]
+python-multipart
+markdown
+jinja2
+pygments
+
+# pdf
+playwright
+
+# addon: translation (비활성 상태 — 활성화 시 주석 해제)
+# libretranslatepy
+# deep-translator

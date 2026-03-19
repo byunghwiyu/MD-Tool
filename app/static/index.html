@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Toolkit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header class="app-header">
+    <span class="app-logo">Local Toolkit</span>
+    <nav class="tab-nav">
+      <button class="tab active" data-tab="export">MD Export</button>
+      <button class="tab" data-tab="convert">PDF → MD</button>
+    </nav>
+    <div class="header-right">
+      <span class="engine-dot" id="engineDot" title="marker_single 상태"></span>
+      <span class="engine-label" id="engineLabel">marker 확인 중</span>
+    </div>
+  </header>
+
+  <!-- ── MD Export 탭 ─────────────────────────────── -->
+  <div class="tab-content active" id="tab-export">
+
+    <div class="export-bar">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".md" hidden>
+        <span class="upload-icon">📄</span>
+        <span class="upload-label" id="uploadLabel">.md 파일 선택</span>
+      </div>
+
+      <div class="vr"></div>
+
+      <div class="template-group">
+        <label class="tmpl selected" data-value="clean-report">
+          <input type="radio" name="template" value="clean-report" checked hidden>
+          Clean Report
+        </label>
+        <label class="tmpl" data-value="technical-docs">
+          <input type="radio" name="template" value="technical-docs" hidden>
+          Technical Docs
+        </label>
+        <label class="tmpl" data-value="print-essay">
+          <input type="radio" name="template" value="print-essay" hidden>
+          Print Essay
+        </label>
+      </div>
+
+      <div class="vr"></div>
+
+      <button class="btn-primary" id="exportBtn" disabled>HTML + PDF 변환</button>
+
+      <div class="result-actions" id="resultActions" hidden>
+        <a class="btn-ghost" id="downloadHtmlBtn" href="#" download>HTML</a>
+        <a class="btn-ghost" id="downloadPdfBtn" href="#" download hidden>PDF</a>
+        <button class="btn-ghost" id="openExportFolderBtn">폴더 열기</button>
+      </div>
+    </div>
+
+    <div class="status-strip" id="exportStatusStrip" hidden>
+      <span id="exportStatusMsg"></span>
+    </div>
+
+    <div class="preview-area">
+      <div class="preview-empty" id="previewEmpty">
+        <p>.md 파일을 업로드하고 변환 버튼을 누르세요.</p>
+      </div>
+      <iframe class="preview-frame" id="previewFrame" hidden></iframe>
+    </div>
+
+  </div>
+
+  <!-- ── PDF → MD 탭 ──────────────────────────────── -->
+  <div class="tab-content" id="tab-convert">
+    <div class="convert-layout">
+
+      <!-- 사이드 패널 -->
+      <aside class="convert-sidebar">
+        <div class="sidebar-section">
+          <p class="sidebar-label">PDF 파일</p>
+          <div class="pdf-dropzone" id="pdfDropzone">
+            <input type="file" id="pdfInput" accept=".pdf" hidden>
+            <span class="drop-icon">📋</span>
+            <span class="drop-title" id="pdfDropTitle">PDF 파일 선택</span>
+            <span class="drop-sub">드래그 앤 드롭 또는 클릭</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <p class="sidebar-label">출력 포맷</p>
+          <div class="format-group">
+            <label class="fmt selected" data-value="markdown">
+              <input type="radio" name="output_format" value="markdown" checked hidden>
+              Markdown
+            </label>
+            <label class="fmt" data-value="html">
+              <input type="radio" name="output_format" value="html" hidden>
+              HTML
+            </label>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <label class="field-label" for="pageRange">페이지 범위 <span class="field-hint">(예: 0,1-3)</span></label>
+          <input class="field-input" type="text" id="pageRange" placeholder="전체 (비워두면 전체 변환)">
+        </div>
+
+        <div class="sidebar-section">
+          <label class="checkbox-row">
+            <input type="checkbox" id="forceOcr">
+            <span>OCR 강제 사용</span>
+          </label>
+          <p class="field-hint mt4">스캔본이거나 텍스트 추출이 안 될 때 활성화</p>
+        </div>
+
+        <button class="btn-convert" id="convertBtn" disabled>변환 시작</button>
+      </aside>
+
+      <!-- 결과 영역 -->
+      <main class="convert-result" id="convertResult">
+
+        <!-- idle -->
+        <div class="result-idle" id="resultIdle">
+          <div class="idle-icon">📋</div>
+          <p>PDF 파일을 선택하고 변환을 시작하세요.</p>
+        </div>
+
+        <!-- running -->
+        <div class="result-running hidden" id="resultRunning">
+          <div class="running-header">
+            <span class="running-filename" id="runningFilename"></span>
+            <span class="state-pill running">변환 중</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-meta">
+              <span id="progressPct">0%</span>
+              <span id="progressEta">ETA —</span>
+              <span id="progressElapsed">경과 —</span>
+            </div>
+          </div>
+          <p class="progress-note" id="progressNote">대기 중입니다.</p>
+        </div>
+
+        <!-- done -->
+        <div class="result-done hidden" id="resultDone">
+          <div class="done-header">
+            <div>
+              <span class="done-filename" id="doneFilename"></span>
+              <span class="state-pill done">완료</span>
+            </div>
+            <div class="done-actions">
+              <button class="btn-ghost" id="openConvertFolderBtn">폴더 열기</button>
+            </div>
+          </div>
+          <div class="done-meta">
+            <span id="doneMeta"></span>
+          </div>
+
+          <!-- 파일 목록 -->
+          <div class="files-section">
+            <p class="section-label">결과 파일</p>
+            <ul class="file-list" id="fileList"></ul>
+          </div>
+
+          <!-- 프리뷰 -->
+          <div class="preview-section">
+            <div class="preview-section-header">
+              <p class="section-label">미리보기</p>
+              <div class="preview-toggle">
+                <button class="toggle-btn active" id="rawBtn">Raw</button>
+                <button class="toggle-btn" id="renderedBtn">Rendered</button>
+              </div>
+            </div>
+            <pre class="preview-raw" id="previewRaw"></pre>
+            <div class="preview-rendered hidden" id="previewRendered"></div>
+          </div>
+
+          <!-- 로그 (접기/펼치기) -->
+          <details class="log-details">
+            <summary>변환 로그</summary>
+            <pre class="log-content" id="logContent"></pre>
+          </details>
+        </div>
+
+        <!-- failed -->
+        <div class="result-failed hidden" id="resultFailed">
+          <div class="failed-icon">⚠️</div>
+          <p class="failed-msg" id="failedMsg"></p>
+          <details class="log-details">
+            <summary>오류 로그</summary>
+            <pre class="log-content" id="failedLog"></pre>
+          </details>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- 통합 이력 바 -->
+  <footer class="history-bar" id="historyBar">
+    <span class="history-label">이력</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+  <script src="/static/convert.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 작업 디렉토리 (업로드/임시파일/변환 결과)
+workspace/
+outputs/
+
+# Job 상태 저장 파일
+*.jobs.json
+
+# OS
+.DS_Store
+Thumbs.db
